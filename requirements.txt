@@ -1,0 +1,9 @@
+# Python 3.9.16 project dependencies
+# Virtual environment: .venv/
+#
+# No external dependencies currently installed.
+# Add packages as needed using: pip install <package_name>
+# Then update this file with: pip freeze > requirements.txt
+
+
+pytest
