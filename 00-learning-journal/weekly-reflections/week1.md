@@ -1,7 +1,7 @@
 # Week 1 — Reflection (in progress)
 
 **Theme:** Python fluency + Git hygiene
-**Sessions logged:** Day 1 (2026-04-29)
+**Sessions logged:** Day 1 (2026-04-29), Day 2 (2026-04-30)
 
 ## What I covered
 
@@ -54,11 +54,56 @@
   pattern, reach for `defaultdict`. When you find yourself writing
   `for k in d: out[k] = f(d[k])`, reach for a dict comprehension.
 
-## Open items / next session
+## Day 2 update — Git mental model
 
-- Day 2: hands-on Git — `rebase -i`, `cherry-pick`, and recovery
-  scenarios on this repo.
-- Small repo hygiene fixes:
+### What I covered
+
+- Git's data model: blobs, trees, commits, tags as content-hashed
+  objects.
+- Commit = snapshot pointer + parent pointer(s) + metadata. Not a diff.
+- Branch = a tiny text file at `.git/refs/heads/<name>` containing
+  one SHA. Slashes in branch names are real directory separators.
+- HEAD = a pointer to the current branch (or a raw SHA when detached).
+- How every operation maps onto "create new objects, move pointers":
+  commit, checkout, merge, rebase, cherry-pick, reset.
+- Interactive rebase verbs (`pick`, `reword`, `edit`, `squash`,
+  `fixup`, `drop`) and the control trio (`--continue`, `--skip`,
+  `--abort`).
+- Old commits are never destroyed by rebase/reset — they linger in
+  the object database, recoverable via `git reflog`.
+- Commit-message hygiene: describe changes, not filenames.
+
+### What went well
+
+- Got the core mental model on the first explanation: commits as
+  snapshot pointers, branches as pointer files, HEAD as a pointer to
+  the current branch.
+- Predicted correctly that `git checkout main` moves HEAD but does
+  not touch branch refs.
+- Reasoned correctly about why rebased commits get new SHAs (parent
+  pointers and metadata change, and SHAs hash all of it).
+
+### Where I struggled
+
+- Dropped the suffix on branch paths (`.../heads/feature` instead of
+  `.../heads/feature/git-practice`). Branch names are paths.
+- Multi-step exercise lost two of three commits silently because I
+  didn't verify each step. The rebase that followed had nothing to
+  squash, so the practice didn't happen.
+- Skipped the prediction step on one of the questions. Predictions
+  are where the model gets built; running commands without predicting
+  is a verification, not a learning, exercise.
+- Didn't know `git rebase --abort`. Should have learned the abort
+  command before the forward command.
+
+### Open items / next session
+
+- Week 1, Day 3: Python packaging and imports — modules vs packages,
+  `__init__.py`, the import search path, and a refactor of the repo
+  so `from exercises.gene_means import gene_means` is robust.
+- Rebase + cherry-pick fluency to be picked up in real workflow over
+  the next 7 weeks rather than via more synthetic drills.
+- Small repo hygiene fixes still pending:
   - Add `.gitignore` (`.idea/`, `__pycache__/`, `.pytest_cache/`,
     `.venv/`).
   - Pin `pytest>=8.0` in `requirements.txt`.
