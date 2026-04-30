@@ -15,6 +15,5 @@ def gene_means(path: str) -> dict[str, float]:
 
 
 if __name__ == "__main__":
-    # todo: add file expression.csv to data/
     expr_mean = gene_means(sys.argv[1])
     print(expr_mean)
