@@ -1,5 +1,8 @@
-.idea/
 __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
+.idea/
+.vscode/
+*.egg-info/
+.DS_Store
