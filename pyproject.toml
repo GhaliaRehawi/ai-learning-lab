@@ -10,7 +10,13 @@ requires-python = ">=3.9"
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = [
+    "pytest>=8.0",
+    "numpy>=2.0",
+    "pandas>=2.0",
+    "scikit-learn>=1.4",
+    "matplotlib>=3.8",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -18,5 +24,5 @@ include = ["*"]
 namespaces = false
 
 [tool.pytest.ini_options]
-testpaths = ["01-python-foundation/tests"]
-pythonpath = ["01-python-foundation"]
+testpaths = ["01-python-foundation/tests", "03-supervised-foundations/tests"]
+pythonpath = ["01-python-foundation", "03-supervised-foundations"]
