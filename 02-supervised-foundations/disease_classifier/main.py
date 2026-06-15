@@ -1,24 +1,49 @@
+from pathlib import Path
+import numpy as np
+
 from disease_classifier.data import load_golub
+from utils.utils import read_config_file
+from disease_classifier.train import run_cv
+
 from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix, classification_report
+
 
 
 def main() -> None:
     X, y = load_golub()
-    # Split into training and testing
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+    y_num = y.map({"ALL": 0, "AML": 1}).astype(int)
+    # 1) Set Up The Experiment
 
-    clf = LogisticRegression(max_iter=1000)
-    clf.fit(X_train, y_train)
-    print("Test accuracy:", clf.score(X_test, y_test))
+    # Set up working path
+    path = Path(__file__).resolve().parents[1]
+    # Read config file
+    config = read_config_file(str(path) + '/configs/golub_logreg.yml')
 
-    y_pred = clf.predict(X_test)
-    cm = confusion_matrix(y_test, y_pred, labels=["ALL", "AML"])
-    print("Confusion matrix (rows = true, cols = pred):")
-    print(cm)
+    data_path = config['data']['path']
+    model_name = config['model']['type']
 
-    print(classification_report(y_test, y_pred, target_names=["ALL", "AML"]))
+    # Initialize the model
+    if model_name == "logistic_regression":
+        clf = LogisticRegression(max_iter=1000, class_weight=config['model']['class_weight'])
+    else:
+        raise ValueError(f"Model {model_name} not supported.")
+
+    # Run cv and print evaluation results across folds
+    cv_results = run_cv(X, y_num, clf, config['cv']['n_splits'], config['cv']['random_state'])
+
+    print("ROC-AUC scores:", cv_results["test_roc_auc"])
+    print("PR-AUC scores:", cv_results["test_pr_auc"])
+    print(f"Mean ROC-AUC: {np.mean(cv_results['test_roc_auc']):.3f} ± {np.std(cv_results['test_roc_auc']):.3f}")
+    print(f"Mean PR-AUC:  {np.mean(cv_results['test_pr_auc']):.3f} ± {np.std(cv_results['test_pr_auc']):.3f}")
+
+    # In case of high Precision (TP/TP+FP) and low Recall (TP/TP+FN), we can say that the model is good
+    # at identifying positive cases (AML) but misses many of them, leading to a high number of
+    # false negatives (AML cases classified as ALL). This could be problematic in a medical context
+    # where missing a diagnosis can have serious consequences.
+    # We might want to adjust the model or threshold to improve recall, even if it means sacrificing some precision.
+    # We can do this by penalizing the model more when it predicts the positve class wrongly
+    # clf = LogisticRegression(max_iter=1000, class_weight="balanced")
+
 
 
 if __name__ == "__main__":
