@@ -1,13 +1,14 @@
 from pathlib import Path
 import numpy as np
+import matplotlib.pyplot as plt
 
 from disease_classifier.data import load_golub
 from utils.utils import read_config_file
 from disease_classifier.train import run_cv
 
+from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
-
-
+from sklearn.metrics import RocCurveDisplay, PrecisionRecallDisplay, roc_curve, auc, precision_recall_curve
 
 def main() -> None:
     X, y = load_golub()
@@ -22,14 +23,33 @@ def main() -> None:
     data_path = config['data']['path']
     model_name = config['model']['type']
 
-    # Initialize the model
+    # Run cv and print evaluation results across folds
     if model_name == "logistic_regression":
+        cv_results = run_cv(X, y_num, config['cv']['n_splits'], config['random_state'], model_name)
+        # Train the final model
         clf = LogisticRegression(max_iter=1000, class_weight=config['model']['class_weight'])
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=config['random_state'], stratify=y)
+        clf.fit(X_train, y_train)
+        # Get probabilities for the positive class (AML)
+        y_proba = clf.predict_proba(X_test)[:, list(clf.classes_).index("AML")]
+
+        # ROC curve shows the model performance on different thresholds p and reports TPR (recall) and FPR (FP/FP + TN)
+        fpr, tpr, roc_thresholds = roc_curve(y_test, y_proba, pos_label="AML")
+        roc_auc = auc(fpr, tpr)
+        #RocCurveDisplay(fpr=fpr, tpr=tpr).plot()
+        #plt.savefig("roc_golub_logreg.png", dpi=150, bbox_inches="tight")
+        #plt.close()
+
+        # PR curve shows the model performance on different thresholds p and reports TPR (recall) and precision
+        # PR‑AUC is especially informative when positives are rare
+        precision, recall, pr_thresholds = precision_recall_curve(y_test, y_proba, pos_label="AML")
+        pr_auc = auc(recall, precision)
+        #PrecisionRecallDisplay(precision=precision, recall=recall).plot()
+        #plt.savefig("PR_golub_logreg.png", dpi=150, bbox_inches="tight")
+        #plt.close()
     else:
         raise ValueError(f"Model {model_name} not supported.")
-
-    # Run cv and print evaluation results across folds
-    cv_results = run_cv(X, y_num, clf, config['cv']['n_splits'], config['cv']['random_state'])
 
     print("ROC-AUC scores:", cv_results["test_roc_auc"])
     print("PR-AUC scores:", cv_results["test_pr_auc"])
@@ -43,6 +63,11 @@ def main() -> None:
     # We might want to adjust the model or threshold to improve recall, even if it means sacrificing some precision.
     # We can do this by penalizing the model more when it predicts the positve class wrongly
     # clf = LogisticRegression(max_iter=1000, class_weight="balanced")
+
+    print("ROC-AUC score of the final model:", roc_auc)
+    print("PR-AUC score of the final model:", pr_auc)
+
+
 
 
 
